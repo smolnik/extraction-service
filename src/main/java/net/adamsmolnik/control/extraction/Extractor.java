@@ -1,7 +1,9 @@
 package net.adamsmolnik.control.extraction;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -20,6 +22,8 @@ import net.adamsmolnik.provider.EntitySaver;
 @Dependent
 public class Extractor {
 
+    private static final String LINE_SEPARATOR = "\n";
+
     @Inject
     private EntityProvider entityProvider;
 
@@ -36,10 +40,23 @@ public class Extractor {
     }
 
     public List<String> extract(String objectKey, String type) {
-        Entity entity = entityProvider.getEntity(new EntityReference(objectKey));
+        EntityReference entityReference = new EntityReference(objectKey);
+        Entity entity = entityProvider.getEntity(entityReference);
         try (InputStream is = entity.getInputStream()) {
             ExtractionHandler eh = extractionHandlerMap.get(type);
-            return eh.extract(objectKey, is, entitySaver);
+            List<String> fileNames = eh.extract(objectKey, is, entitySaver);
+            StringBuilder sb = new StringBuilder();
+            for (String fn : fileNames) {
+                sb.append(fn);
+                sb.append(LINE_SEPARATOR);
+            }
+            String fileNamesAsString = sb.substring(0, sb.length() - LINE_SEPARATOR.length());
+            byte[] fileNamesAsBytes = fileNamesAsString.getBytes(StandardCharsets.UTF_8);
+            ByteArrayInputStream bais = new ByteArrayInputStream(fileNamesAsBytes);
+            String extractionInfoObjectKey = objectKey + "-extraction.info";
+            entityProvider.persist(new EntityReference(extractionInfoObjectKey), fileNamesAsBytes.length, bais);
+            entityProvider.setNewMetadata(entityReference, "extractionInfoObjectKey", extractionInfoObjectKey);
+            return fileNames;
         } catch (IOException e) {
             throw new ServiceException(e);
         }

@@ -19,7 +19,7 @@ import net.adamsmolnik.provider.EntitySaver;
  */
 public class ZipHandler implements ExtractionHandler {
 
-    private static final String S3_OBJECT_KEY_SEPARATOR = "/";
+    private static final String OBJECT_KEY_SEPARATOR = "/";
 
     private static class MutableBoolean {
 
@@ -71,8 +71,8 @@ public class ZipHandler implements ExtractionHandler {
 
     private static String buildObjectKey(String objectKey, String entryName) {
         Path objectKeyPath = Paths.get(objectKey);
-        String newEntryObjectKey = objectKeyPath.resolveSibling("~" + objectKeyPath.getFileName()).toString() + S3_OBJECT_KEY_SEPARATOR + entryName;
-        newEntryObjectKey = newEntryObjectKey.replaceAll(Pattern.quote("\\"), S3_OBJECT_KEY_SEPARATOR);
+        String newEntryObjectKey = objectKeyPath.resolveSibling("~" + objectKeyPath.getFileName()).toString() + OBJECT_KEY_SEPARATOR + entryName;
+        newEntryObjectKey = newEntryObjectKey.replaceAll(Pattern.quote("\\"), OBJECT_KEY_SEPARATOR);
         return newEntryObjectKey;
     }
 
