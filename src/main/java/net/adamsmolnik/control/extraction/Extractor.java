@@ -39,9 +39,8 @@ public class Extractor {
         return extractionHandlerMap.containsKey(type);
     }
 
-    public List<String> extract(String objectKey, String type) {
-        EntityReference entityReference = new EntityReference(objectKey);
-        Entity entity = entityProvider.getEntity(entityReference);
+    public ExtractionOutcome extract(String objectKey, String type) {
+        Entity entity = entityProvider.getEntity(new EntityReference(objectKey));
         try (InputStream is = entity.getInputStream()) {
             ExtractionHandler eh = extractionHandlerMap.get(type);
             List<String> fileNames = eh.extract(objectKey, is, entitySaver);
@@ -55,8 +54,7 @@ public class Extractor {
             ByteArrayInputStream bais = new ByteArrayInputStream(fileNamesAsBytes);
             String extractionInfoObjectKey = objectKey + "-extraction.info";
             entityProvider.persist(new EntityReference(extractionInfoObjectKey), fileNamesAsBytes.length, bais);
-            entityProvider.setNewMetadata(entityReference, "extractionInfoObjectKey", extractionInfoObjectKey);
-            return fileNames;
+            return new ExtractionOutcome(extractionInfoObjectKey, fileNames);
         } catch (IOException e) {
             throw new ServiceException(e);
         }

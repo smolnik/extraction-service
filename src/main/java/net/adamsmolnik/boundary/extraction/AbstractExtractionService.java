@@ -1,7 +1,6 @@
 package net.adamsmolnik.boundary.extraction;
 
-import java.util.Collections;
-import java.util.List;
+import net.adamsmolnik.control.extraction.ExtractionOutcome;
 import net.adamsmolnik.control.extraction.Extractor;
 import net.adamsmolnik.model.extraction.ExtractionRequest;
 import net.adamsmolnik.model.extraction.ExtractionResponse;
@@ -17,9 +16,12 @@ public abstract class AbstractExtractionService {
         Extractor extractor = getExtractorInstance();
         String type = extractionRequest.type;
         String objKey = extractionRequest.objectKey;
-        List<String> emptyList = Collections.emptyList();
-        return extractor.eligible(type) ? new ExtractionResponse(ExtractionStatus.EXTRACTED, extractor.extract(objKey, type))
-                : new ExtractionResponse(ExtractionStatus.NOT_ELIGIBLE, emptyList);
+        if (extractor.eligible(type)) {
+            ExtractionOutcome eo = extractor.extract(objKey, type);
+            return new ExtractionResponse(ExtractionStatus.EXTRACTED, eo.getExtractionInfoObjectKey(), eo.getObjectKeys());
+        } else {
+            return new ExtractionResponse(ExtractionStatus.NOT_ELIGIBLE);
+        }
     }
 
     protected abstract Extractor getExtractorInstance();
